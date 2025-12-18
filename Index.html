@@ -8,30 +8,214 @@
   <link rel="manifest" href="manifest.json">
   <style>
     *{box-sizing:border-box;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;}
-    body{background:#fff;color:#000;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+    body{background:#fff;color:#000;height:100vh;display:flex;flex-direction:column;overflow:hidden}
     .page{flex:1;display:flex;flex-direction:column;animation:fade .3s}
     @keyframes fade{from{opacity:.6}}
     .hidden{display:none}
-    /* ---------- AUTH ---------- */
+    /* auth */
     #authPage{background:#ff3b30;color:#fff;justify-content:center;align-items:center;text-align:center;padding:20px}
     #authPage input{padding:12px;margin:8px 0;width:100%;max-width:280px;border:none;border-radius:6px}
     #authPage button{background:#fff;color:#ff3b30;border:none;padding:12px 24px;border-radius:6px;font-weight:bold;width:100%;max-width:280px}
-    /* ---------- CAMERA ---------- */
+    /* camera */
     #cameraView{flex:1;position:relative;background:#000}
     #video{width:100%;height:100%;object-fit:cover}
     #snapBtn{width:64px;height:64px;border-radius:50%;background:transparent;border:3px solid #ff3b30;position:absolute;bottom:90px;left:50%;transform:translateX(-50%);box-shadow:0 0 0 4px #000}
-    /* ---------- NAV ---------- */
+    /* nav */
     nav{height:60px;background:#fff;display:flex;justify-content:space-around;align-items:center;border-top:1px solid #ddd}
     nav button{background:none;border:none;color:#888;font-size:22px;flex:1;height:100%}
     nav button.active{color:#ff3b30}
-    /* ---------- CHAT ---------- */
+    /* chat */
     #chatList{flex:1;overflow:auto;padding:10px}
     .chat{padding:10px;border-bottom:1px solid #eee;display:flex;align-items:center}
     .chat img.avatar{width:40px;height:40px;border-radius:50%;margin-right:10px;background:#ff3b30;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
-    /* ---------- ADD BY USERNAME ---------- */
+    /* add friends */
     #addBox{padding:20px}
     #addBox input{padding:10px;border:1px solid #ddd;border-radius:6px;width:100%;margin-bottom:10px}
     #userResults div{padding:10px;border-bottom:1px solid #eee}
-    /* ---------- AVATAR PICKER ---------- */
+    /* avatar picker */
     #avatarPicker{display:flex;flex-wrap:wrap;gap:10px;padding:10px;justify-content:center}
-    #avatarPicker
+    #avatarPicker span{font-size:32px;padding:8px;border:2px solid transparent;border-radius:50%;cursor:pointer}
+    #avatarPicker span.selected{border-color:#ff3b30}
+  </style>
+</head>
+<body>
+
+  <!-- AUTH -->
+  <div id="authPage" class="page">
+    <h1>⚡️Flash Network⚡️</h1>
+    <input id="email" placeholder="Email">
+    <input id="pass" type="password" placeholder="Password">
+    <button onclick="login()">Log In</button>
+    <button onclick="register()">Register</button>
+  </div>
+
+  <!-- APP PAGES -->
+  <div id="pageChat" class="page hidden"><div id="chatList"></div></div>
+  <div id="pageCamera" class="page hidden">
+    <div id="cameraView"><video id="video" autoplay muted playsinline></video></div>
+  </div>
+  <div id="pageStories" class="page hidden"><div style="padding:30px;text-align:center;color:#999">Stories coming soon</div></div>
+  <div id="pageGames" class="page hidden">
+    <div style="padding:20px"><button onclick="loadGame('chess')">♟ Chess</button><button onclick="loadGame('snakes')">🐍 Snakes</button></div>
+    <div id="gameBoard"></div>
+  </div>
+  <div id="pageAdd" class="page hidden">
+    <div id="addBox">
+      <h3>Add Friend by Username</h3>
+      <input id="searchUser" placeholder="Type username"><button onclick="searchUsername()">Search</button>
+      <div id="userResults"></div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav class="hidden" id="bottomNav">
+    <button id="navChat" onclick="show('Chat')">💬</button>
+    <button id="navCamera" onclick="show('Camera')" class="active">📷</button>
+    <button id="navStories" onclick="show('Stories')">🎯</button>
+    <button id="navGames" onclick="show('Games')">🎮</button>
+    <button id="navAdd" onclick="show('Add')">➕</button>
+  </nav>
+
+  <!-- FIREBASE -->
+  <script type="module">
+    import {initializeApp} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,updateProfile,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import {getDatabase,ref,set,push,onChildAdded,onValue,get} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import {getStorage,ref as sRef,uploadString,getDownloadURL} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCA0qYJrPtkRgjCNZTLVo5dfMG9W-O980U",
+      authDomain: "flash-chat-cc8d5.firebaseapp.com",
+      projectId: "flash-chat-cc8d5",
+      storageBucket: "flash-chat-cc8d5.firebasestorage.app",
+      messagingSenderId: "1024330564824",
+      appId: "1:1024330564824:web:10e91cd0dc01246220c3ad"
+    };
+    const app=initializeApp(firebaseConfig);
+    const auth=getAuth(app);
+    const db=getDatabase(app);
+    const storage=getStorage(app);
+
+    let myId, myName, myEmoji='⚡️', friendId='broadcast';
+
+    /* AUTH */
+    window.login=()=>{
+      const e=document.getElementById('email').value, p=document.getElementById('pass').value;
+      signInWithEmailAndPassword(auth,e,p).catch(alert);
+    };
+    window.register=()=>{
+      const e=document.getElementById('email').value, p=document.getElementById('pass').value;
+      createUserWithEmailAndPassword(auth,e,p).then(cred=>{
+        myId=cred.user.uid;
+        const name=prompt('Pick a username'); if(!name)return;
+        myName=name; myEmoji='⚡️';
+        updateProfile(cred.user,{displayName:name,photoURL:myEmoji});
+        storeUser();
+      }).catch(alert);
+    };
+    onAuthStateChanged(auth,user=>{
+      if(user){
+        myId=user.uid; myName=user.displayName||'User'; myEmoji=user.photoURL||'⚡️';
+        document.getElementById('authPage').classList.add('hidden');
+        document.getElementById('bottomNav').classList.remove('hidden');
+        show('Camera'); startCamera();
+        storeUser(); loadFriends(); loadInbox();
+      }else{
+        document.getElementById('authPage').classList.remove('hidden');
+        document.getElementById('bottomNav').classList.add('hidden');
+      }
+    });
+    function storeUser(){ set(ref(db,'users/'+myId),{name:myName,emoji:myEmoji}); }
+
+    /* NAV */
+    window.show=p=>{
+      document.querySelectorAll('.page').forEach(pg=>pg.classList.add('hidden'));
+      document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+      document.getElementById('page'+p).classList.remove('hidden');
+      document.getElementById('nav'+p).classList.add('active');
+      if(p==='Camera') startCamera();
+    };
+
+    /* CAMERA */
+    let stream;
+    function startCamera(){
+      if(stream)return;
+      navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false}).then(s=>{stream=s; document.getElementById('video').srcObject=s;});
+    }
+    document.getElementById('cameraView').addEventListener('click',takeSnap);
+    function takeSnap(){
+      const vid=document.getElementById('video'), can=document.createElement('canvas');
+      can.width=vid.videoWidth; can.height=vid.videoHeight;
+      can.getContext('2d').drawImage(vid,0,0);
+      can.toBlob(blob=>{
+        const r=new FileReader(); r.onloadend=()=>sendSnap(r.result); r.readAsDataURL(blob);
+      });
+    }
+    function sendSnap(dataURL){
+      const key=push(ref(db,'snaps')).key;
+      const snapRef=sRef(storage,'snaps/'+key+'.jpg');
+      uploadString(snapRef,dataURL,'data_url').then(()=>{
+        getDownloadURL(snapRef).then(url=>{
+          push(ref(db,'inbox/'+friendId),{from:myId,url,expiry:Date.now()+10000});
+        });
+      });
+    }
+
+    /* FRIENDS / USERNAME SEARCH */
+    window.searchUsername=()=>{
+      const q=document.getElementById('searchUser').value.trim();
+      if(!q)return;
+      get(ref(db,'users')).then(ss=>{
+        const res=document.getElementById('userResults'); res.innerHTML='';
+        ss.forEach(c=>{
+          const d=c.val(); if(d.name.toLowerCase()===q.toLowerCase()){
+            const div=document.createElement('div');
+            div.innerHTML=`${d.emoji} ${d.name} <button onclick="addFriend('${c.key}')">Add</button>`;
+            res.appendChild(div);
+          }
+        });
+      });
+    };
+    window.addFriend=fid=>{
+      set(ref(db,'friends/'+myId+'/'+fid),true);
+      set(ref(db,'friends/'+fid+'/'+myId),true);
+      alert('Friend added!'); document.getElementById('userResults').innerHTML='';
+    };
+    function loadFriends(){
+      onChildAdded(ref(db,'friends/'+myId),snap=>{
+        const fid=snap.key;
+        get(ref(db,'users/'+fid)).then(u=>{
+          const d=u.val()||{};
+          const div=document.createElement('div'); div.className='chat';
+          div.innerHTML=`<span class="avatar">${d.emoji||'👤'}</span><div><b>${d.name||'User'}</b></div>`;
+          div.onclick=()=>{friendId=fid; show('Chat');};
+          document.getElementById('chatList').appendChild(div);
+        });
+      });
+    }
+
+    /* INBOX */
+    function loadInbox(){
+      onChildAdded(ref(db,'inbox/'+myId),snap=>{
+        const m=snap.val(); if(Date.now()>m.expiry){ snap.ref.remove(); return; }
+        const div=document.createElement('div'); div.className='chat';
+        const img=new Image(); img.src=m.url; img.style.maxWidth='100%';
+        div.appendChild(img);
+        document.getElementById('chatList').prepend(div);
+        setTimeout(()=>{ div.remove(); snap.ref.remove(); }, m.expiry-Date.now());
+      });
+    }
+
+    /* GAMES */
+    window.loadGame=g=>{
+      const b=document.getElementById('gameBoard'); b.innerHTML='';
+      if(g==='chess') b.innerHTML='<div id="board" style="width:80vmin;height:80vmin;display:grid;grid-template-columns:repeat(8,1fr);gap:1px;background:#444"></div>';
+      if(g==='snakes') b.innerHTML='<p>🐍 Snakes & Ladders – dice roll coming soon</p>';
+    };
+
+    /* PWA */
+    if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+  </script>
+</body>
+</html>
+
