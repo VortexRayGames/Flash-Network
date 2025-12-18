@@ -1,1 +1,19 @@
+{
+  "name": "⚡️Flash Network⚡️",
+  "short_name": "Flash Network",
+  "description": "Snap-style chats + games.  Red-theme.",
+  "display": "standalone",
+  "background_color": "#ff3b30",
+  "theme_color": "#ff3b30",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAIhQN/x2pXaAAAAABJRU5ErkJggg==",
+      "sizes": "144x144",
+      "type": "image/png"
+    }
+  ]
+}
+
 
