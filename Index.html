@@ -7,7 +7,6 @@
   <meta name="theme-color" content="#ff3b30">
   <link rel="manifest" href="manifest.json">
   <style>
-    /*  SAME STYLES AS BEFORE  – plus tiny extras  */
     *{box-sizing:border-box;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;}
     body{background:#fff;color:#000;height:100vh;display:flex;flex-direction:column;overflow:hidden}
     .page{flex:1;display:flex;flex-direction:column;animation:fade .3s}
@@ -29,45 +28,75 @@
     #chatList{flex:1;overflow:auto;padding:10px}
     .chat{padding:10px;border-bottom:1px solid #eee;display:flex;align-items:center}
     .chat img.avatar{width:40px;height:40px;border-radius:50%;margin-right:10px;background:#ff3b30;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;object-fit:cover}
-    /* add friends */
-    #addBox{padding:20px}
-    #addBox input{padding:10px;border:1px solid #ddd;border-radius:6px;width:100%;margin-bottom:10px}
-    #userResults div{padding:10px;border-bottom:1px solid #eee}
-    /* avatar + PNG upload */
-    #avatarPicker{display:flex;flex-wrap:wrap;gap:10px;padding:10px;justify-content:center}
-    #avatarPicker span{font-size:32px;padding:8px;border:2px solid transparent;border-radius:50%;cursor:pointer}
-    #avatarPicker span.selected{border-color:#ff3b30}
-    #pngUpload{margin-top:10px}
+    /* text bubbles */
+    #textChat{flex:1;overflow:auto;padding:10px;background:#fafafa}
+    .bubble{max-width:70%;padding:8px 12px;margin:4px 0;border-radius:16px;font-size:15px}
+    .mine{background:#ff3b30;color:#fff;margin-left:auto}
+    .theirs{background:#e5e5ea;color:#000}
+    /* message input bar */
+    #textBar{display:flex;border-top:1px solid #ddd;padding:6px;background:#fff}
+    #textBar input{flex:1;border:none;padding:8px;font-size:16px}
+    #textBar button{background:#ff3b30;color:#fff;border:none;padding:8px 14px;border-radius:20px;margin-left:6px}
+
+    /* stories */
+    #storiesList{display:flex;gap:10px;padding:10px;overflow-x:auto;background:#fafafa}
+    .storySlot{flex:0 0 80px;text-align:center;font-size:12px}
+    .storySlot img{width:64px;height:64px;border-radius:50%;border:3px solid #ff3b30;object-fit:cover}
+    #storyViewer{position:fixed;inset:0;background:#000;z-index:999;display:flex;align-items:center;justify-content:center}
+    #storyViewer img{max-width:100%;max-height:100%}
+    #storyViewer button{position:absolute;top:10px;right:10px;background:#ff3b30;color:#fff;border:none;padding:6px 12px;border-radius:6px}
+
+    /* games */
+    #gameBoard{flex:1;display:flex;align-items:center;justify-content:center;background:#1a1a1a}
+    /* stories & games placeholder */
+    .placeholder{padding:30px;text-align:center;color:#999}
   </style>
 </head>
 <body>
 
-  <!-- AUTH PAGE -->
+  <!-- AUTH -->
   <div id="authPage" class="page">
     <h1>⚡️Flash Network⚡️</h1>
     <input id="email" placeholder="Email">
     <input id="pass" type="password" placeholder="Password">
     <button onclick="login()">Log In</button>
     <button onclick="register()">Register</button>
-
-    <!-- emoji picker -->
     <div id="avatarPicker"></div>
-
-    <!-- PNG/JPEG upload -->
     <input id="pngUpload" type="file" accept="image/png, image/jpeg" class="hidden">
     <button onclick="document.getElementById('pngUpload').click()">Upload Avatar PNG</button>
   </div>
 
-  <!-- MAIN APP PAGES -->
-  <div id="pageChat" class="page hidden"><div id="chatList"></div></div>
+  <!-- CAMERA -->
   <div id="pageCamera" class="page hidden">
     <div id="cameraView"><video id="video" autoplay muted playsinline></video></div>
   </div>
-  <div id="pageStories" class="page hidden"><div style="padding:30px;text-align:center;color:#999">Stories coming soon</div></div>
+
+  <!-- TEXT CHAT -->
+  <div id="pageTextChat" class="page hidden">
+    <div id="textChat"></div>
+    <div id="textBar">
+      <input id="msgInput" placeholder="Type a message">
+      <button onclick="sendText()">Send</button>
+    </div>
+  </div>
+
+  <!-- STORIES -->
+  <div id="pageStories" class="page hidden">
+    <div id="storiesList"></div>
+    <div class="placeholder">Tap a friend’s circle to view their story</div>
+  </div>
+
+  <!-- GAMES -->
   <div id="pageGames" class="page hidden">
-    <div style="padding:20px"><button onclick="loadGame('chess')">♟ Chess</button><button onclick="loadGame('snakes')">🐍 Snakes</button></div>
+    <div style="padding:20px">
+      <button onclick="loadGame('chess')">♟ Chess</button>
+      <button onclick="loadGame('snakes')">🐍 Snakes</button>
+      <button onclick="inviteToGame()">Invite Friend</button>
+    </div>
     <div id="gameBoard"></div>
   </div>
+
+  <!-- ADD FRIENDS -->
   <div id="pageAdd" class="page hidden">
     <div id="addBox">
       <h3>Add Friend by Username</h3>
@@ -78,7 +107,7 @@
 
   <!-- BOTTOM NAV -->
   <nav class="hidden" id="bottomNav">
-    <button id="navChat" onclick="show('Chat')">💬</button>
+    <button id="navChat" onclick="show('TextChat')">💬</button>
     <button id="navCamera" onclick="show('Camera')" class="active">📷</button>
     <button id="navStories" onclick="show('Stories')">🎯</button>
     <button id="navGames" onclick="show('Games')">🎮</button>
@@ -127,7 +156,7 @@
         myId=user.uid; myName=user.displayName||'User'; myEmoji=user.photoURL||'⚡️'; customPhotoURL=user.customPhoto||'';
         document.getElementById('authPage').classList.add('hidden');
         document.getElementById('bottomNav').classList.remove('hidden');
-        show('Camera'); startCamera(); storeUser(); loadFriends(); loadInbox();
+        show('Camera'); startCamera(); storeUser(); loadFriends(); loadInbox(); loadStories(); notifyMe();
       }else{
         document.getElementById('authPage').classList.remove('hidden');
         document.getElementById('bottomNav').classList.add('hidden');
@@ -137,7 +166,7 @@
       set(ref(db,'users/'+myId),{name:myName,emoji:myEmoji,customPhoto:customPhotoURL});
     }
 
-    /* ---------- AVATAR PICKER (EMOJI) ---------- */
+    /* ---------- AVATAR ---------- */
     const emojiPool=['⚡️','🔥','😎','🚀','🌟','💎','🎮','📸','🤍','🦊'];
     window.addEventListener('DOMContentLoaded',()=>{
       const picker=document.getElementById('avatarPicker');
@@ -152,14 +181,12 @@
         picker.appendChild(sp);
       });
     });
-
-    /* ---------- PNG/JPEG UPLOAD ---------- */
     document.getElementById('pngUpload').addEventListener('change',e=>{
       const file=e.target.files[0]; if(!file)return;
       const storageRef=sRef(storage,'avatars/'+myId+'.'+file.name.split('.').pop());
       uploadBytes(storageRef,file).then(snapshot=>{
         getDownloadURL(snapshot.ref).then(url=>{
-          customPhotoURL=url; myEmoji='';           // switch off emoji
+          customPhotoURL=url; myEmoji='';
           if(auth.currentUser)updateProfile(auth.currentUser,{photoURL:url});
           storeUser();
         });
@@ -206,7 +233,24 @@
       return new Blob([u],{type:mime});
     }
 
-    /* ---------- FRIENDS / USERNAME SEARCH ---------- */
+    /* ---------- TEXT CHAT ---------- */
+    window.sendText=()=>{
+      const inp=document.getElementById('msgInput'), txt=inp.value.trim(); if(!txt)return;
+      inp.value='';
+      const msg={from:myId,text:txt,time:Date.now()};
+      push(ref(db,'textChat/'+friendId),msg);
+    };
+    function loadInbox(){
+      onChildAdded(ref(db,'textChat/'+friendId),snap=>{
+        const m=snap.val(), div=document.createElement('div');
+        div.className=m.from===myId?'bubble mine':'bubble theirs';
+        div.textContent=m.text;
+        document.getElementById('textChat').appendChild(div);
+        document.getElementById('textChat').scrollTop=1e9;
+      });
+    }
+
+    /* ---------- FRIENDS / SEARCH ---------- */
     window.searchUsername=()=>{
       const q=document.getElementById('searchUser').value.trim();
       if(!q)return;
@@ -231,32 +275,115 @@
         const fid=snap.key;
         get(ref(db,'users/'+fid)).then(u=>{
           const d=u.val()||{};
-          const div=document.createElement('div'); div.className='chat';
           const avatarSrc=d.customPhoto||('data:image/svg+xml;base64,'+btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="100%" height="100%" fill="#ff3b30"/><text x="50%" y="50%" font-size="26" fill="#fff" text-anchor="middle" dominant-baseline="middle">${d.emoji||'👤'}</text></svg>`));
-          div.innerHTML=`<img class="avatar" src="${avatarSrc}"><div><b>${d.name||'User'}</b></div>`;
-          div.onclick=()=>{friendId=fid; show('Chat');};
+          const div=document.createElement('div'); div.className='chat';
+          div.innerHTML=`<img class="avatar" src="${avatarSrc}"><div><b>${d.name||'User'}</b><br><button onclick="openText('${fid}')">Chat</button> <button onclick="startCall('${fid}',true)">📹</button> <button onclick="startCall('${fid}',false)">☎️</button></div>`;
           document.getElementById('chatList').appendChild(div);
         });
       });
     }
+    window.openText=fid=>{friendId=fid; document.getElementById('textChat').innerHTML=''; show('TextChat');};
 
-    /* ---------- INBOX ---------- */
-    function loadInbox(){
-      onChildAdded(ref(db,'inbox/'+myId),snap=>{
-        const m=snap.val(); if(Date.now()>m.expiry){ snap.ref.remove(); return; }
-        const div=document.createElement('div'); div.className='chat';
-        const img=new Image(); img.src=m.url; img.style.maxWidth='100%';
-        div.appendChild(img);
-        document.getElementById('chatList').prepend(div);
-        setTimeout(()=>{ div.remove(); snap.ref.remove(); }, m.expiry-Date.now());
+    /* ---------- PUSH NOTIFICATIONS ---------- */
+    function notifyMe(){
+      if(!('Notification' in window))return;
+      if(Notification.permission==='granted')return;
+      if(Notification.permission!=='denied')Notification.requestPermission();
+    }
+    function pushNotify(title,body){
+      if(Notification.permission==='granted')new Notification(title,{body,icon:'https://cdn-icons-png.flaticon.com/512/1384/1384030.png'});
+    }
+    onChildAdded(ref(db,'textChat/'+myId),snap=>{
+      const m=snap.val(); if(m.from!==myId)pushNotify('Flash Network',m.text);
+    });
+
+    /* ---------- STORIES ---------- */
+    function loadStories(){
+      const list=document.getElementById('storiesList'); list.innerHTML='';
+      get(ref(db,'friends/'+myId)).then(ss=>{
+        ss.forEach(c=>{
+          const fid=c.key;
+          get(ref(db,'users/'+fid)).then(u=>{
+            const d=u.val()||{};
+            const slot=document.createElement('div'); slot.className='storySlot';
+            const img=document.createElement('img');
+            img.src=d.customPhoto||('data:image/svg+xml;base64,'+btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="#ff3b30"/><text x="50%" y="50%" font-size="32" fill="#fff" text-anchor="middle" dominant-baseline="middle">${d.emoji||'👤'}</text></svg>`));
+            img.onclick=()=>viewStory(fid);
+            slot.appendChild(img); slot.appendChild(Object.assign(document.createElement('div'),{textContent:d.name||'User'}));
+            list.appendChild(slot);
+          });
+        });
       });
     }
+    window.viewStory=fid=>{
+      get(ref(db,'stories/'+fid)).then(ss=>{
+        const snaps=ss.val()||{}; const keys=Object.keys(snaps);
+        if(keys.length===0)return alert('No stories');
+        let idx=0;
+        const viewer=document.createElement('div'); viewer.id='storyViewer';
+        const img=document.createElement('img'); img.src=snaps[keys[idx]].url;
+        const close=Object.assign(document.createElement('button'),{textContent:'✕'});
+        close.onclick=()=>viewer.remove();
+        viewer.appendChild(img); viewer.appendChild(close); document.body.appendChild(viewer);
+        const next=()=>{idx++;if(keys[idx])img.src=snaps[keys[idx]].url;else viewer.remove();};
+        viewer.onclick=next;
+        setTimeout(next,5000);
+      });
+    };
+    window.uploadStory=()=>{
+      const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+      inp.onchange=e=>{
+        const file=e.target.files[0]; if(!file)return;
+        const key=push(ref(db,'stories/'+myId)).key;
+        const storyRef=sRef(storage,'stories/'+myId+'/'+key+'.jpg');
+        uploadBytes(storyRef,file).then(snapshot=>{
+          getDownloadURL(snapshot.ref).then(url=>{
+            set(ref(db,'stories/'+myId+'/'+key),{url,expiry:Date.now()+86400000});
+          });
+        });
+      }; inp.click();
+    };
 
     /* ---------- GAMES ---------- */
     window.loadGame=g=>{
       const b=document.getElementById('gameBoard'); b.innerHTML='';
       if(g==='chess') b.innerHTML='<div id="board" style="width:80vmin;height:80vmin;display:grid;grid-template-columns:repeat(8,1fr);gap:1px;background:#444"></div>';
       if(g==='snakes') b.innerHTML='<p>🐍 Snakes & Ladders – dice roll coming soon</p>';
+    };
+    window.inviteToGame=()=>{
+      if(friendId==='broadcast')return alert('Pick a friend first');
+      push(ref(db,'gameInvites/'+friendId),{from:myId,game:'chess'});
+      alert('Invite sent!');
+    };
+    onChildAdded(ref(db,'gameInvites/'+myId),snap=>{
+      const inv=snap.val(); if(!inv)return;
+      if(confirm('Play Chess?')){loadGame('chess'); show('Games');}
+      snap.ref.remove();
+    });
+
+    /* ---------- WEBRTC CALLS ---------- */
+    let localStream, peerConn, callChannel;
+    const servers={iceServers:[{urls:'stun:stun.l.google.com:19302'}]};
+    window.startCall=async(fid,video)=>{
+      friendId=fid;
+      localStream=await navigator.mediaDevices.getUserMedia({video,audio:true});
+      peerConn=new RTCPeerConnection(servers);
+      localStream.getTracks().forEach(t=>peerConn.addTrack(t,localStream));
+      const offer=await peerConn.createOffer(); await peerConn.setLocalDescription(offer);
+      push(ref(db,'calls/'+fid),{from:myId,offer,sdp:offer.sdp,type:offer.type});
+      onChildAdded(ref(db,'calls/'+myId),async snap=>{
+        const m=snap.val(); if(m.from!==fid)return;
+        if(m.answer){ await peerConn.setRemoteDescription(new RTCSessionDescription(m.answer)); }
+        if(m.ice){ try{peerConn.addIceCandidate(m.ice);}catch{} }
+      });
+      peerConn.onicecandidate=e=>{
+        if(e.candidate) push(ref(db,'calls/'+fid),{from:myId,ice:e.candidate.toJSON()});
+      };
+      peerConn.ontrack=e=>{
+        const remoteVideo=document.createElement('video'); remoteVideo.srcObject=e.streams[0];
+        remoteVideo autoplay playsinline style="position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:998";
+        document.body.appendChild(remoteVideo);
+      };
     };
 
     /* ---------- PWA ---------- */
