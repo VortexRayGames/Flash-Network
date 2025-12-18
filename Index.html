@@ -1,1 +1,37 @@
-
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>⚡️Flash Network⚡️</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#ff3b30">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    *{box-sizing:border-box;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;}
+    body{background:#fff;color:#000;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+    .page{flex:1;display:flex;flex-direction:column;animation:fade .3s}
+    @keyframes fade{from{opacity:.6}}
+    .hidden{display:none}
+    /* ---------- AUTH ---------- */
+    #authPage{background:#ff3b30;color:#fff;justify-content:center;align-items:center;text-align:center;padding:20px}
+    #authPage input{padding:12px;margin:8px 0;width:100%;max-width:280px;border:none;border-radius:6px}
+    #authPage button{background:#fff;color:#ff3b30;border:none;padding:12px 24px;border-radius:6px;font-weight:bold;width:100%;max-width:280px}
+    /* ---------- CAMERA ---------- */
+    #cameraView{flex:1;position:relative;background:#000}
+    #video{width:100%;height:100%;object-fit:cover}
+    #snapBtn{width:64px;height:64px;border-radius:50%;background:transparent;border:3px solid #ff3b30;position:absolute;bottom:90px;left:50%;transform:translateX(-50%);box-shadow:0 0 0 4px #000}
+    /* ---------- NAV ---------- */
+    nav{height:60px;background:#fff;display:flex;justify-content:space-around;align-items:center;border-top:1px solid #ddd}
+    nav button{background:none;border:none;color:#888;font-size:22px;flex:1;height:100%}
+    nav button.active{color:#ff3b30}
+    /* ---------- CHAT ---------- */
+    #chatList{flex:1;overflow:auto;padding:10px}
+    .chat{padding:10px;border-bottom:1px solid #eee;display:flex;align-items:center}
+    .chat img.avatar{width:40px;height:40px;border-radius:50%;margin-right:10px;background:#ff3b30;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+    /* ---------- ADD BY USERNAME ---------- */
+    #addBox{padding:20px}
+    #addBox input{padding:10px;border:1px solid #ddd;border-radius:6px;width:100%;margin-bottom:10px}
+    #userResults div{padding:10px;border-bottom:1px solid #eee}
+    /* ---------- AVATAR PICKER ---------- */
+    #avatarPicker{display:flex;flex-wrap:wrap;gap:10px;padding:10px;justify-content:center}
+    #avatarPicker
